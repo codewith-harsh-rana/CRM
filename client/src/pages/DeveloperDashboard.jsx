@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  FaClock, FaTasks, FaSignOutAlt, FaCodeBranch, FaBug,
-  FaCalendarAlt, FaDownload, FaUserCircle, FaCheckCircle,
+  FaClock, FaTasks, FaSignOutAlt, FaCodeBranch,
+  FaDownload, FaUserCircle, FaCheckCircle,
   FaSignInAlt, FaMoneyBillWave, FaUser, FaHistory
 } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
@@ -34,6 +34,14 @@ const DeveloperDashboard = () => {
   const [salarySlips, setSalarySlips] = useState([]);
 
   const token = localStorage.getItem("token");
+
+  // CSV headers for attendance export
+  const csvHeaders = [
+    { label: "Date", key: "date" },
+    { label: "Check-In", key: "checkIn" },
+    { label: "Check-Out", key: "checkOut" },
+    { label: "Duration", key: "duration" },
+  ];
 
 const fetchAttendance = async () => {
     try {

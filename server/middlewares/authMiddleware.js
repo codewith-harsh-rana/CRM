@@ -1,19 +1,43 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 
+// Protect route: Ensure token is valid and attach user info to `req.user`
 exports.protect = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized: No token provided" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // decoded contains id and role
     next();
   } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+    console.error("Token verification failed:", err.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
+// Allow access only if role matches one of allowed roles
+exports.allowRoles = (...roles) => {
+  return (req, res, next) => {
+    const userRole = req.user?.role;
+    console.log("User Role =>", userRole); // Debug
+
+    // Always allow superadmin
+    if (userRole === "superadmin") return next();
+    if (userRole === "hr") return next();
+    if (userRole === "developer") return next();
+
+    if (!roles.includes(userRole)) {
+      return res.status(403).json({ message: "Access denied: Role not allowed" });
+    }
+
+    next();
+  };
+};
+
+// SuperAdmin only
 exports.isSuperAdmin = (req, res, next) => {
   if (req.user.role !== "superadmin") {
     return res.status(403).json({ message: "Only SuperAdmin allowed" });
@@ -21,35 +45,18 @@ exports.isSuperAdmin = (req, res, next) => {
   next();
 };
 
-// Optional HR-only middleware
+// HR only
 exports.isHR = (req, res, next) => {
   if (req.user.role !== "hr") {
-    return res.status(403).json({ message: "Only HR can perform this action" });
+    return res.status(403).json({ message: "Only HR allowed" });
   }
   next();
 };
 
+// SuperAdmin or HR
 exports.isSuperAdminOrHR = (req, res, next) => {
-  if (req.user.role === "hr" || req.user.role === "superadmin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Access denied" });
+  if (req.user.role === "superadmin" || req.user.role === "hr") {
+    return next();
   }
+  return res.status(403).json({ message: "Access denied: Not HR or SuperAdmin" });
 };
-
-// middlewares/roleMiddleware.js
-// This middleware checks if the user is superadmin by verifying the token and role
-exports.allowRoles = (...roles) => {
-  return (req, res, next) => {
-    // If superadmin is a static role, always allow if role is superadmin
-    if (req.user && req.user.role === "superadmin") {
-      return next();
-    }
-    // Otherwise, check if the user's role is in the allowed roles
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Access denied: Role not allowed" });
-    }
-    next();
-  };
-};
-
