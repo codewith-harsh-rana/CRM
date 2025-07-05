@@ -56,7 +56,7 @@ const HrDashboard = () => {
     try {
       const res = await axios.get("http://localhost:5000/api/jobs", {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      }); dd
       setJobs(res.data);
     } catch {
       toast.error("Failed to load jobs");
